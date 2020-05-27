@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.dev.js"
+    integrity="sha256-OgiHfllOBEOiWQ2OcBsDncRG2k7QBW9Rs1dB7MH2N2s=" crossorigin="anonymous"></script>
+  <title>SocketIO</title>
+</head>
+
+<body>
+  <div id="v-app">
+    <h1> {{ title }} </h1>
+    <div class="stuck">
+      </p>
+      <p v-for="txt of texts"> {{ txt.name }}: {{ txt.message }} </p>
+    </div>
+    <div class="input-container">
+      <input type="text" v-model="name" style="width: 80%;">
+      <input type="text" v-model="message" style="width: 80%;">
+      <button @click.prevent="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    var app = new Vue({
+      el: '#v-app',
+      data: {
+        title: 'SocketIO',
+        name: '',
+        message: '',
+        texts: [],
+        socket: null
+      },
+      methods: {
+        receiveMessage(msg) {
+          this.texts.push(msg.name);
+        },
+        receiveInitialData(data) {
+          data.messages.map(item => {
+            this.texts.push(item)
+          })
+          this.texts.reverse()
+        },
+        sendMessage() {
+          this.socket.emit('messageToServer', { name: this.name, message: this.message });
+          this.message = '';
+        }
+      },
+      watch: {
+        texts: function (val) {
+          if (this.texts.length > 10) {
+            this.texts.shift()
+          }
+        }
+      },
+      created() {
+        this.socket = io('http://localhost:3000');
+        this.socket.on('messageToClient', (msg) => {
+          this.receiveMessage(msg);
+        })
+        this.socket.on('initialData', (msg) => {
+          this.receiveInitialData(msg);
+        })
+      }
+    })
+  </script>
+</body>
+
+</html>
